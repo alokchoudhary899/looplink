@@ -1,0 +1,20 @@
+{% extends "public_base.html" %}
+{% block title %}{{ name }}{% endblock %}
+{% block content %}
+    <div class="card">
+        <h1>{{ name }}</h1>
+        {% if description %}<p class="muted">{{ description }}</p>{% endif %}
+
+        {% if errors %}
+            <div class="errors">{% for e in errors %}<div>{{ e }}</div>{% endfor %}</div>
+        {% endif %}
+
+        <form method="post" action="/s/{{ token }}/enroll">
+            <label for="identity">Phone or email</label>
+            <input type="text" id="identity" name="identity" placeholder="you@example.com or 555-123-4567" required autofocus>
+            <div class="row" style="margin-top:14px">
+                <button class="btn primary" type="submit" style="width:100%">Enroll</button>
+            </div>
+        </form>
+    </div>
+{% endblock %}

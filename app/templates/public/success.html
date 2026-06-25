@@ -1,0 +1,22 @@
+{% extends "public_base.html" %}
+{% block title %}{{ name }} — your offers{% endblock %}
+{% block content %}
+    <div class="card">
+        {% if already_enrolled %}
+            <h1>You're already enrolled</h1>
+            <p class="muted">Welcome back — here's what "{{ name }}" includes:</p>
+        {% else %}
+            <h1>You're in!</h1>
+            <p class="muted">Here's what "{{ name }}" includes:</p>
+        {% endif %}
+    </div>
+
+    {% for o in offers %}
+        <div class="offer-card">
+            <div class="type">{{ o.type }}</div>
+            {% for k, v in o.params.items() %}
+                <div><strong>{{ k }}:</strong> {{ v }}</div>
+            {% endfor %}
+        </div>
+    {% endfor %}
+{% endblock %}

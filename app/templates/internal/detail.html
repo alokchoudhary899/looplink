@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+{% block title %}{{ campaign.name }} — LoopLink{% endblock %}
+{% block content %}
+    <div class="row between">
+        <h1>{{ campaign.name }}</h1>
+        <span class="badge {{ campaign.status.value }}">{{ campaign.status.value }}</span>
+    </div>
+    <p class="muted"><a href="/campaigns">&larr; All campaigns</a></p>
+
+    {% if errors %}
+        <div class="errors">{% for e in errors %}<div>{{ e }}</div>{% endfor %}</div>
+    {% endif %}
+
+    <!-- Lifecycle actions: the server decides which of these are legal right
+         now via can_schedule()/can_launch()/can_end(); we only render what's
+         currently allowed, but every button still posts to a route that
+         re-checks the same rule before doing anything. -->
+    <div class="card">
+        <div class="row">
+            {% if campaign.can_schedule() %}
+            <form class="inline" method="post" action="/campaigns/{{ campaign.id }}/schedule">
+                <button class="btn" type="submit">Schedule</button>
+            </form>
+            {% endif %}
+            {% if campaign.can_launch() %}
+            <form class="inline" method="post" action="/campaigns/{{ campaign.id }}/launch">
+                <button class="btn primary" type="submit">Launch</button>
+            </form>
+            {% endif %}
+            {% if campaign.can_end() %}
+            <form class="inline" method="post" action="/campaigns/{{ campaign.id }}/end">
+                <button class="btn danger" type="submit">End</button>
+            </form>
+            {% endif %}
+            {% if campaign.status.value == 'draft' and not campaign.is_launchable() %}
+                <span class="muted">Add at least one offer and a valid window to schedule/launch.</span>
+            {% endif %}
+            {% if campaign.status.value == 'ended' %}
+                <span class="muted">This campaign is ended. No further actions.</span>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if public_url %}
+    <div class="card">
+        <h2 style="margin-top:0">Distribute</h2>
+        <p class="muted">Live — shoppers can scan or open this link.</p>
+        <p><a href="{{ public_url }}" target="_blank">{{ public_url }}</a></p>
+        <img src="/campaigns/{{ campaign.id }}/qr.png" alt="QR code" width="160" height="160">
+    </div>
+    {% endif %}
+
+    <!-- Edit form: only meaningful in draft. Past draft, the fields are
+         read-only and there is no edit POST endpoint that would accept them
+         (server enforces this regardless of what the UI shows). -->
+    <div class="card">
+        <h2 style="margin-top:0">Details</h2>
+        {% if campaign.can_edit() %}
+        <form method="post" action="/campaigns/{{ campaign.id }}/edit">
+            <input type="hidden" name="version" value="{{ campaign.version }}">
+            <label for="name">Name</label>
+            <input type="text" id="name" name="name" value="{{ campaign.name }}" required>
+
+            <label for="description">Description</label>
+            <textarea id="description" name="description">{{ campaign.description }}</textarea>
+
+            <div class="row">
+                <div style="flex:1">
+                    <label for="starts_at">Starts at (UTC)</label>
+                    <input type="datetime-local" id="starts_at" name="starts_at"
+                           value="{{ campaign.starts_at.strftime('%Y-%m-%dT%H:%M') if campaign.starts_at else '' }}">
+                </div>
+                <div style="flex:1">
+                    <label for="ends_at">Ends at (UTC)</label>
+                    <input type="datetime-local" id="ends_at" name="ends_at"
+                           value="{{ campaign.ends_at.strftime('%Y-%m-%dT%H:%M') if campaign.ends_at else '' }}">
+                </div>
+            </div>
+            <div class="row" style="margin-top:14px">
+                <button class="btn primary" type="submit">Save changes</button>
+            </div>
+        </form>
+        {% else %}
+        <p><strong>Window:</strong>
+            {{ campaign.starts_at.strftime('%Y-%m-%d %H:%M') if campaign.starts_at else '—' }}
+            &rarr;
+            {{ campaign.ends_at.strftime('%Y-%m-%d %H:%M') if campaign.ends_at else '—' }} UTC
+        </p>
+        <p>{{ campaign.description or '—' }}</p>
+        <p class="muted">Locked — editing is only allowed in draft.</p>
+        {% endif %}
+    </div>
+
+    <!-- Offers -->
+    <div class="card">
+        <h2 style="margin-top:0">Offers</h2>
+        {% if not campaign.offers %}
+            <p class="muted">No offers attached yet.</p>
+        {% endif %}
+        {% for o in campaign.offers %}
+            <div class="offer-row">
+                <div>
+                    <strong>{{ o.type.value }}</strong>
+                    <div class="muted">
+                        {% for k, v in o.params.items() %}{{ k }}: {{ v }}{% if not loop.last %} · {% endif %}{% endfor %}
+                    </div>
+                </div>
+                {% if campaign.can_edit() %}
+                <form class="inline" method="post" action="/campaigns/{{ campaign.id }}/offers/{{ o.id }}/delete">
+                    <button class="btn danger" type="submit">Remove</button>
+                </form>
+                {% endif %}
+            </div>
+        {% endfor %}
+
+        {% if campaign.can_edit() %}
+        <h2>Add an offer</h2>
+        <form method="post" action="/campaigns/{{ campaign.id }}/offers/add" id="offer-form">
+            <label for="offer_type">Offer type</label>
+            <select id="offer_type" name="offer_type" onchange="showOfferFields(this.value)">
+                <option value="">Select a type&hellip;</option>
+                {% for t in offer_types %}
+                    <option value="{{ t.value }}">{{ t.value }}</option>
+                {% endfor %}
+            </select>
+
+            {% for t, fields in param_specs.items() %}
+            <div class="offer-fields" id="fields-{{ t.value }}" style="display:none">
+                {% for field, kind in fields.items() %}
+                    <label for="{{ t.value }}-{{ field }}">{{ field }}</label>
+                    {% if kind == 'number' %}
+                        <input type="number" step="any" name="{{ field }}" id="{{ t.value }}-{{ field }}">
+                    {% else %}
+                        <input type="text" name="{{ field }}" id="{{ t.value }}-{{ field }}">
+                    {% endif %}
+                {% endfor %}
+            </div>
+            {% endfor %}
+
+            <div class="row" style="margin-top:14px">
+                <button class="btn primary" type="submit">Add offer</button>
+            </div>
+        </form>
+        {% endif %}
+    </div>
+
+    <script src="/static/js/builder.js"></script>
+{% endblock %}

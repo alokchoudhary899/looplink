@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Campaigns — LoopLink{% endblock %}
+{% block content %}
+    <div class="row between">
+        <h1>Campaigns</h1>
+        <a class="btn primary" href="/campaigns/new">+ New campaign</a>
+    </div>
+
+    {% if not campaigns %}
+        <div class="empty-state card">
+            <p><strong>No campaigns yet.</strong></p>
+            <p>Create your first campaign to get started.</p>
+            <a class="btn primary" href="/campaigns/new">+ New campaign</a>
+        </div>
+    {% else %}
+        {% for c in campaigns %}
+            <a class="list-item" href="/campaigns/{{ c.id }}">
+                <div class="card row between">
+                    <div>
+                        <strong>{{ c.name }}</strong>
+                        <div class="muted">{{ c.offers|length }} offer(s)</div>
+                    </div>
+                    <span class="badge {{ c.status.value }}">{{ c.status.value }}</span>
+                </div>
+            </a>
+        {% endfor %}
+    {% endif %}
+{% endblock %}
