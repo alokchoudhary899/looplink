@@ -146,6 +146,16 @@ reviewed and adjusted the design decisions above myself, and ran the
 flows manually against a live server to confirm each one behaves as
 described before treating it as done.
 
+## Docker
+
+Added after the initial build, for an easier "just run it" path:
+`Dockerfile` + `docker-compose.yml`. The only code change this required
+was making the SQLite path configurable via `LOOPLINK_DATA_DIR`
+(`app/database.py`), defaulting to the project root so local/non-Docker
+behavior is unchanged. In the container it's set to `/app/data`, which
+`docker-compose.yml` mounts as a named volume so the data outlives
+`docker compose down`.
+
 ## What I'd do next with more time
 
 - Add pytest coverage for the lifecycle transitions (legal + illegal),

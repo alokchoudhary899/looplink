@@ -1,0 +1,13 @@
+services:
+  web:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      # Named volume so the SQLite file (at /app/data inside the
+      # container, per LOOPLINK_DATA_DIR in the Dockerfile) survives
+      # `docker compose down` / restarts.
+      - looplink_data:/app/data
+
+volumes:
+  looplink_data:

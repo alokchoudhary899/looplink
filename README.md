@@ -21,6 +21,28 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload --port 8000
 ```
 
+### Or run it with Docker
+
+No local Python setup needed — just Docker.
+
+```bash
+cd looplink
+docker compose up --build
+```
+
+That builds the image, starts the app on http://127.0.0.1:8000, and keeps
+the SQLite file in a named volume (`looplink_data`) so your data survives
+`docker compose down` / restarts. Stop it with `docker compose down`
+(add `-v` if you also want to wipe the data volume).
+
+Without compose, plain `docker` works too, but you're responsible for the
+volume mount yourself if you want the data to persist:
+
+```bash
+docker build -t looplink .
+docker run -p 8000:8000 -v looplink_data:/app/data looplink
+```
+
 Open:
 - Internal builder: http://127.0.0.1:8000/campaigns
 - Public shopper page: you reach this via the link/QR a live campaign produces
