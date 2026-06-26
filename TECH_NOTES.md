@@ -1,5 +1,28 @@
 # TECH_NOTES.md
 
+## Status flow
+
+```
+draft ──schedule──▶ scheduled ──launch──▶ live ──end──▶ ended
+  │                                          ▲
+  └──────────────launch─────────────────────┘
+```
+
+- **draft** — editable freely, not shopper-visible.
+- **scheduled** — validated + locked, awaiting launch, not shopper-visible.
+- **live** — locked, enrollable (the only status the public page treats as "open").
+- **ended** — terminal, locked, not shopper-visible.
+
+All transitions are forward-only and server-enforced (`Campaign.can_schedule()
+/can_launch()/can_end()` in `app/models.py`):
+- `schedule`: draft → scheduled, requires a valid window + ≥1 offer
+- `launch`: draft **or** scheduled → live, same requirements, opens
+  enrollment immediately regardless of `starts_at`
+- `end`: live → ended
+
+There is no un-schedule and no re-edit once a campaign leaves draft —
+editing (`can_edit()`) is only ever true in draft.
+
 ## 1. Validation — client, server, or both?
 
 Server-only for anything that decides correctness; client-side is limited to
